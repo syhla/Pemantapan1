@@ -20,7 +20,7 @@ class AuthenticatedSessionController extends Controller
             $role = trim(strtolower($user->role));
 
             if ($role === 'admin') return redirect()->route('admin.barang.index');
-            if ($role === 'gudang') return redirect()->route('gudang.index');
+            if ($role === 'gudang') return redirect()->route('gudang.barang.index');
             if ($role === 'gerai') return redirect()->route('gerai.transaksi.index');
         }
 
@@ -37,7 +37,7 @@ class AuthenticatedSessionController extends Controller
         $role = trim(strtolower($user->role));
 
         if ($role === 'admin') return redirect()->route('admin.barang.index');
-        if ($role === 'gudang') return redirect()->route('gudang.index');
+        if ($role === 'gudang') return redirect()->route('gudang.barang.index');
         if ($role === 'gerai') return redirect()->route('gerai.transaksi.index');
 
         abort(403);

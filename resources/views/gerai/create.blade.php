@@ -25,7 +25,7 @@
 
         <div style="margin-bottom:10px;">
             <label>Nama Gerai</label><br>
-            <input type="text" name="nama" value="{{ old('nama') }}" style="width:100%; padding:8px;">
+            <input type="text" name="nama_gerai" value="{{ old('nama_gerai') }}" style="width:100%; padding:8px;">
         </div>
 
         <div style="margin-bottom:10px;">

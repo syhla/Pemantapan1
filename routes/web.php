@@ -10,43 +10,56 @@ use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
-// 🚀 Default: redirect ke login
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// 🚀 Default redirect ke login
+Route::get('/', fn() => redirect()->route('login'));
 
-// ✨ LOGIN & LOGOUT di luar middleware auth
-Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+// ✨ LOGIN & LOGOUT
+Route::get('/login', [AuthenticatedSessionController::class,'create'])->name('login');
+Route::post('/login', [AuthenticatedSessionController::class,'store']);
+Route::post('/logout', [AuthenticatedSessionController::class,'destroy'])->name('logout');
 
 // 🔐 Semua route lain wajib login
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth'])->group(function(){
 
     // 👑 ADMIN
     Route::middleware([\App\Http\Middleware\RoleMiddleware::class.':admin'])
         ->prefix('admin')
         ->as('admin.')
-        ->group(function () {
-            Route::resource('barang', BarangController::class);
-            Route::resource('kategori', KategoriController::class);
+        ->group(function(){
+
+            // BARANG (view + approve/reject)
+            Route::get('barang',[BarangController::class,'index'])->name('barang.index');
+            Route::post('barang/{id}/approve',[BarangController::class,'approve'])->name('barang.approve'); // ubah ke POST
+            Route::post('barang/{id}/reject',[BarangController::class,'reject'])->name('barang.reject');   // ubah ke POST
+
+            // SUPPLIER (full CRUD)
             Route::resource('supplier', SupplierController::class);
+
+            // GERAI (full CRUD)
             Route::resource('gerai', GeraiController::class);
 
-            Route::get('/transaksi', [TransaksiController::class, 'index'])
-                ->name('transaksi.index');
-            Route::get('/transaksi/{id}/approve', [TransaksiController::class, 'approve'])
-                ->name('transaksi.approve');
-            Route::get('/transaksi/{id}/reject', [TransaksiController::class, 'reject'])
-                ->name('transaksi.reject');
+            // KATEGORI (full CRUD)
+            Route::resource('kategori', KategoriController::class);
+
+            // TRANSAKSI (view + approve/reject)
+            Route::get('transaksi',[TransaksiController::class,'index'])->name('transaksi.index');
+            Route::post('transaksi/{id}/approve',[TransaksiController::class,'approve'])->name('transaksi.approve'); // ubah ke POST
+            Route::post('transaksi/{id}/reject',[TransaksiController::class,'reject'])->name('transaksi.reject');   // ubah ke POST
+
+            // DISTRIBUSI (view only)
+            Route::get('distribusi',[DistribusiController::class,'index'])->name('distribusi.index');
         });
 
     // 🏭 GUDANG
     Route::middleware([\App\Http\Middleware\RoleMiddleware::class.':gudang'])
         ->prefix('gudang')
         ->as('gudang.')
-        ->group(function () {
-            Route::get('/', [BarangController::class, 'gudang'])->name('index');
+        ->group(function(){
+
+            // BARANG (full CRUD)
+            Route::resource('barang', BarangController::class);
+
+            // DISTRIBUSI (full CRUD)
             Route::resource('distribusi', DistribusiController::class);
         });
 
@@ -54,10 +67,13 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware([\App\Http\Middleware\RoleMiddleware::class.':gerai'])
         ->prefix('gerai')
         ->as('gerai.')
-        ->group(function () {
-            Route::resource('transaksi', TransaksiController::class);
+        ->group(function(){
+
+            // TRANSAKSI (buat transaksi baru / store)
+            // **Tidak ada approve/reject karena gerai tidak punya hak itu**
+            Route::resource('transaksi', TransaksiController::class)->except(['destroy','edit','update']);
         });
 
-    // PROFILE SEMUA ROLE BOLEH
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // PROFILE (semua role boleh akses)
+    Route::get('/profile',[ProfileController::class,'edit'])->name('profile.edit');
 });

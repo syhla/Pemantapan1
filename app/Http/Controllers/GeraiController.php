@@ -21,14 +21,15 @@ class GeraiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_gerai'=>'required',
-            'alamat'=>'required',
-            'kota'=>'required',
-            'telepon'=>'required'
+            'nama_gerai' => 'required',
+            'alamat'     => 'required',
+            'kota'       => 'required',
+            'telepon'    => 'required'
         ]);
 
-        Gerai::create($request->all());
-        return redirect()->route('gerai.index')->with('success','Gerai ditambah');
+        Gerai::create($request->only('nama_gerai', 'alamat', 'kota', 'telepon'));
+
+        return redirect()->route('admin.gerai.index')->with('success', 'Gerai ditambah');
     }
 
     public function edit($id)
@@ -40,19 +41,20 @@ class GeraiController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_gerai'=>'required',
-            'alamat'=>'required',
-            'kota'=>'required',
-            'telepon'=>'required'
+            'nama_gerai' => 'required',
+            'alamat'     => 'required',
+            'kota'       => 'required',
+            'telepon'    => 'required'
         ]);
 
-        Gerai::findOrFail($id)->update($request->all());
-        return redirect()->route('gerai.index')->with('success','Gerai diupdate');
+        Gerai::findOrFail($id)->update($request->only('nama_gerai', 'alamat', 'kota', 'telepon'));
+
+        return redirect()->route('admin.gerai.index')->with('success', 'Gerai diupdate');
     }
 
     public function destroy($id)
     {
         Gerai::findOrFail($id)->delete();
-        return back()->with('success','Gerai dihapus');
+        return back()->with('success', 'Gerai dihapus');
     }
 }

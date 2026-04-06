@@ -22,7 +22,10 @@ return new class extends Migration
             $table->decimal('harga', 10, 2);
             $table->integer('stok');
 
-            $table->enum('status', ['pending', 'approved'])->default('approved');
+            // Status langsung ditambahkan di create table
+            $table->enum('status', ['active','pending_edit','pending_delete','rejected'])
+                ->default('active');
+
             $table->timestamps();
         });
     }
