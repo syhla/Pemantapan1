@@ -15,13 +15,14 @@ class BarangController extends Controller
         $barangs = Barang::with(['supplier','kategori'])
             ->when($request->search, function($q) use ($request){
                 $q->where('nama_barang', 'like', "%{$request->search}%")
-                  ->orWhere('kode_barang', 'like', "%{$request->search}%");
+                ->orWhere('kode_barang', 'like', "%{$request->search}%");
             })
             ->get();
 
         if(auth()->user()->role == 'admin'){
-            return view('admin.barang.index', compact('barangs'));
-        }elseif(auth()->user()->role == 'gudang'){
+            $kategoris = Kategori::all(); // <-- tambahan
+            return view('admin.barang.index', compact('barangs', 'kategoris'));
+        } elseif(auth()->user()->role == 'gudang'){
             return view('gudang.barang.index', compact('barangs'));
         }
     }

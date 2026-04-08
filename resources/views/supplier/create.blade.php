@@ -1,45 +1,58 @@
 @extends('layouts.app')
 
+@section('page-title', 'Tambah Supplier')
+@section('breadcrumb', 'Manajemen / Supplier / Tambah')
+
 @section('content')
 
-<div class="card">
+<div style="max-width:520px">
+    <div class="card" style="padding:28px">
 
-<h2>➕ Tambah Supplier</h2>
-<p style="color:#64748b; font-size:14px;">Masukkan data supplier baru</p>
+        <div style="margin-bottom:24px">
+            <div style="font-size:15px;font-weight:600;color:#111827">Tambah Supplier</div>
+            <div style="font-size:12px;color:#9ca3af;margin-top:2px">Masukkan data supplier baru</div>
+        </div>
 
-<form action="{{ route('admin.supplier.store') }}" method="POST" style="margin-top:20px;">
-@csrf
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <ul style="margin:0;padding-left:16px">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-<label>Nama Supplier</label>
-<input type="text" name="nama_supplier" value="{{ old('nama_supplier') }}">
-@error('nama_supplier')
-    <small style="color:red;">{{ $message }}</small>
-@enderror
+        <form action="{{ route('admin.supplier.store') }}" method="POST">
+            @csrf
 
-<label>Alamat</label>
-<input type="text" name="alamat" value="{{ old('alamat') }}">
-@error('alamat')
-    <small style="color:red;">{{ $message }}</small>
-@enderror
+            <div class="form-group">
+                <label>Nama Supplier</label>
+                <input type="text" name="nama_supplier" value="{{ old('nama_supplier') }}" placeholder="Contoh: PT. Sumber Maju">
+            </div>
 
-<label>Kota</label>
-<input type="text" name="kota" value="{{ old('kota') }}">
-@error('kota')
-    <small style="color:red;">{{ $message }}</small>
-@enderror
+            <div class="form-group">
+                <label>Alamat</label>
+                <input type="text" name="alamat" value="{{ old('alamat') }}" placeholder="Jl. Contoh No. 123">
+            </div>
 
-<label>Telepon</label>
-<input type="text" name="telepon" value="{{ old('telepon') }}">
-@error('telepon')
-    <small style="color:red;">{{ $message }}</small>
-@enderror
+            <div class="form-group">
+                <label>Kota</label>
+                <input type="text" name="kota" value="{{ old('kota') }}" placeholder="Contoh: Jakarta">
+            </div>
 
-<div style="margin-top:15px; display:flex; gap:10px;">
-    <button class="btn btn-success">Simpan</button>
-    <a href="{{ route('admin.supplier.index') }}" class="btn btn-danger">Kembali</a>
-</div>
+            <div class="form-group">
+                <label>Telepon</label>
+                <input type="text" name="telepon" value="{{ old('telepon') }}" placeholder="Contoh: 08123456789">
+            </div>
 
-</form>
+            <div style="display:flex;gap:10px;margin-top:8px">
+                <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">💾 Simpan</button>
+                <a href="{{ route('admin.supplier.index') }}" class="btn" style="flex:1;justify-content:center;background:#f3f4f6;color:#374151">← Kembali</a>
+            </div>
+
+        </form>
+    </div>
 </div>
 
 @endsection

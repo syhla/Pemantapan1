@@ -1,63 +1,72 @@
 @extends('layouts.app')
 
+@section('page-title', 'Request Barang')
+@section('breadcrumb', 'Operasional / Transaksi / Request')
+
 @section('content')
 
-<div class="card" style="max-width:500px; margin:auto; padding:20px;">
+<div style="max-width:520px">
+    <div class="card" style="padding:28px">
 
-<h2 style="margin-bottom:15px;">🛒 Request Barang</h2>
+        <div style="margin-bottom:24px">
+            <div style="font-size:15px;font-weight:600;color:#111827">Request Barang</div>
+            <div style="font-size:12px;color:#9ca3af;margin-top:2px">Ajukan permintaan barang ke gudang</div>
+        </div>
 
-{{-- Notifikasi error --}}
-@if ($errors->any())
-    <div style="background:#fee2e2; color:#991b1b; padding:10px; margin-bottom:15px; border-radius:5px;">
-        <ul style="margin:0; padding-left:18px;">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul style="margin:0; padding-left:16px;">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form action="{{ route('gerai.transaksi.store') }}" method="POST">
+            @csrf
+
+            {{-- Barang --}}
+            <div class="form-group">
+                <label>Barang</label>
+                <select name="barang_id">
+                    <option value="">-- Pilih Barang --</option>
+                    @foreach($barangs as $b)
+                        <option value="{{ $b->id }}" {{ old('barang_id') == $b->id ? 'selected' : '' }}>
+                            {{ $b->nama_barang }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Jumlah --}}
+            <div class="form-group">
+                <label>Jumlah</label>
+                <input 
+                    type="number" 
+                    name="jumlah" 
+                    value="{{ old('jumlah') }}"
+                    min="1"
+                    placeholder="Contoh: 10"
+                >
+            </div>
+
+            {{-- Button --}}
+            <div style="display:flex;gap:10px;margin-top:8px">
+                <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">
+                    📤 Kirim
+                </button>
+
+                <a href="{{ route('gerai.transaksi.index') }}"
+                   class="btn"
+                   style="flex:1;justify-content:center;background:#f3f4f6;color:#374151">
+                   ← Kembali
+                </a>
+            </div>
+
+        </form>
+
     </div>
-@endif
-
-<form action="{{ route('gerai.transaksi.store') }}" method="POST">
-    @csrf
-
-    {{-- Barang --}}
-    <div style="margin-bottom:15px;">
-        <label>Barang</label><br>
-        <select name="barang_id" style="width:100%; padding:8px;" required>
-            <option value="">-- Pilih Barang --</option>
-            @foreach($barangs as $b)
-                <option value="{{ $b->id }}" {{ old('barang_id') == $b->id ? 'selected' : '' }}>
-                    {{ $b->nama_barang }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-
-    {{-- Jumlah --}}
-    <div style="margin-bottom:15px;">
-        <label>Jumlah</label><br>
-        <input 
-            type="number" 
-            name="jumlah" 
-            value="{{ old('jumlah') }}"
-            min="1"
-            style="width:100%; padding:8px;"
-            placeholder="Masukkan jumlah"
-            required
-        >
-    </div>
-
-    {{-- Button --}}
-    <button 
-        type="submit" 
-        class="btn btn-primary" 
-        style="width:100%; padding:10px;"
-    >
-        Kirim Request
-    </button>
-
-</form>
-
 </div>
 
 @endsection

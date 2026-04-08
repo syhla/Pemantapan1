@@ -1,64 +1,138 @@
 @extends('layouts.app')
 
+@section('page-title', 'Data Transaksi')
+@section('breadcrumb', 'Operasional / Transaksi')
+
 @section('content')
 
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+        <div style="font-size:15px;font-weight:600;color:#111827">Data Transaksi</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px">Manajemen request barang gerai</div>
+    </div>
+
+    @if(auth()->user()->role == 'gerai')
+        <a href="{{ route('gerai.transaksi.create') }}" class="btn btn-primary">+ Request Barang</a>
+    @endif
+</div>
+
 <div class="card">
-    <h2>📄 Data Transaksi</h2>
-
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Barang</th>
-                <th>Gerai</th>
-                <th>Jumlah</th>
-                <th>Status</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @forelse($transaksis as $t)
+    <div style="overflow-x:auto">
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>{{ $t->barang->nama_barang ?? '-' }}</td>
-                    <td>{{ $t->gerai->nama_gerai ?? '-' }}</td>
+                    <th>No</th>
+                    <th>Barang</th>
+                    <th>Gerai</th>
+                    <th>Jumlah</th>
+                    <th>Status</th>
+                    @if(auth()->user()->role == 'admin' || auth()->user()->role == 'gudang')
+                        <th>Aksi</th>
+                    @endif
+                </tr>
+            </thead>
+
+            <tbody>
+                @forelse($transaksis as $t)
+                <tr>
+                    <td style="color:#9ca3af;font-size:12px">{{ $loop->iteration }}</td>
+
+                    <td style="font-weight:500">
+                        {{ $t->barang->nama_barang ?? '-' }}
+                    </td>
+
+                    <td style="color:#6b7280">
+                        {{ $t->gerai->nama_gerai ?? '-' }}
+                    </td>
+
                     <td>{{ $t->jumlah }}</td>
+
+                    {{-- STATUS --}}
                     <td>
                         @if($t->status == 'pending')
-                            🟡 Pending
+                            <span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b"></span>
+                                Pending
+                            </span>
                         @elseif($t->status == 'approved')
-                            🟢 Approved
+                            <span style="display:inline-flex;align-items:center;gap:5px;background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#22c55e"></span>
+                                Approved
+                            </span>
                         @else
-                            🔴 Ditolak
+                            <span style="display:inline-flex;align-items:center;gap:5px;background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#ef4444"></span>
+                                Ditolak
+                            </span>
                         @endif
                     </td>
-                    <td style="display:flex; gap:5px;">
-                        @if(auth()->user()->role == 'admin' && $t->status == 'pending')
-                            {{-- APPROVE --}}
-                            <form action="{{ route('admin.transaksi.approve', $t->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-success btn-sm">ACC</button>
-                            </form>
 
-                            {{-- REJECT --}}
-                            <form action="{{ route('admin.transaksi.reject', $t->id) }}" method="POST">
-                                @csrf
-                                <input type="text" name="reason" placeholder="Alasan reject" required style="width:120px; height:28px;">
-                                <button type="submit" class="btn btn-danger btn-sm">Tolak</button>
-                            </form>
+                    {{-- AKSI --}}
+                    @if(auth()->user()->role == 'admin')
+                    <td>
+
+                        @if($t->status == 'pending')
+                            <div style="display:flex;gap:6px">
+
+                                <form action="{{ route('admin.transaksi.approve', $t->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit"
+                                        class="btn btn-sm"
+                                        style="background:#dcfce7;color:#15803d">
+                                        ✔️ ACC
+                                    </button>
+                                </form>
+
+                                <form action="{{ route('admin.transaksi.reject', $t->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit"
+                                        class="btn btn-sm"
+                                        style="background:#fee2e2;color:#991b1b">
+                                        ✖️ Tolak
+                                    </button>
+                                </form>
+
+                            </div>
                         @else
-                            -
+                            <span style="color:#9ca3af">—</span>
                         @endif
+
+                    </td>
+                    @elseif(auth()->user()->role == 'gudang')
+                        <td>
+                            @if($t->status == 'approved')
+                                <form action="{{ route('gudang.distribusi.store') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="transaksi_id" value="{{ $t->id }}">
+                                    <input type="hidden" name="jumlah" value="{{ $t->jumlah }}">
+
+                                    <button type="submit"
+                                        class="btn btn-sm"
+                                        style="background:#dbeafe;color:#1d4ed8">
+                                        🚚 Kirim
+                                    </button>
+                                </form>
+                            @else
+                                <span style="color:#9ca3af">—</span>
+                            @endif
+                        </td>
+                    @endif
+
+                </tr>
+
+                @empty
+                <tr>
+                    <td colspan="{{ (auth()->user()->role == 'admin' || auth()->user()->role == 'gudang') ? 6 : 5 }}"
+                        style="text-align:center;padding:40px 16px;color:#9ca3af">
+                        <div style="font-size:28px;margin-bottom:8px">📄</div>
+                        <div style="font-size:13px">Belum ada data transaksi</div>
                     </td>
                 </tr>
-            @empty
-                <tr>
-                    <td colspan="6" class="text-center">Data transaksi kosong</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+                @endforelse
+            </tbody>
+
+        </table>
+    </div>
 </div>
 
 @endsection
