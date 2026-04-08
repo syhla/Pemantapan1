@@ -2,14 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Gerai;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 
 class GeraiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $gerais = Gerai::all();
+        $search = $request->search;
+
+        $gerais = Gerai::with('user')
+            ->when($search, function($q) use ($search){
+                $q->where('nama_gerai', 'like', "%$search%")
+                  ->orWhere('kota', 'like', "%$search%");
+            })
+            ->latest()
+            ->get();
+
         return view('gerai.index', compact('gerais'));
     }
 
@@ -24,37 +35,87 @@ class GeraiController extends Controller
             'nama_gerai' => 'required',
             'alamat'     => 'required',
             'kota'       => 'required',
-            'telepon'    => 'required'
+            'telepon'    => 'required',
+            'email'      => 'required|email|unique:users,email',
         ]);
 
-        Gerai::create($request->only('nama_gerai', 'alamat', 'kota', 'telepon'));
+        // 🔥 SIMPAN GERAI
+        $gerai = Gerai::create([
+            'nama_gerai' => $request->nama_gerai,
+            'alamat'     => $request->alamat,
+            'kota'       => $request->kota,
+            'telepon'    => $request->telepon,
+        ]);
 
-        return redirect()->route('admin.gerai.index')->with('success', 'Gerai ditambah');
+        // 🔥 PASSWORD DEFAULT
+        $password = 'gerai123';
+
+        // 🔥 BUAT USER GERAI
+        User::create([
+            'name' => $gerai->nama_gerai,
+            'email' => $request->email,
+            'password' => Hash::make($password),
+            'password_default' => $password,
+            'role' => 'gerai',
+            'gerai_id' => $gerai->id,
+            'is_first_login' => true,
+        ]);
+
+        return redirect()->route('admin.gerai.index')
+            ->with('success', "Gerai berhasil dibuat | Email: {$request->email} | Password: $password");
     }
 
     public function edit($id)
     {
-        $gerai = Gerai::findOrFail($id);
+        $gerai = Gerai::with('user')->findOrFail($id);
         return view('gerai.edit', compact('gerai'));
     }
 
     public function update(Request $request, $id)
     {
+        $gerai = Gerai::findOrFail($id);
+
         $request->validate([
             'nama_gerai' => 'required',
             'alamat'     => 'required',
             'kota'       => 'required',
-            'telepon'    => 'required'
+            'telepon'    => 'required',
+            // 🔥 FIX VALIDASI EMAIL
+            'email'      => 'required|email|unique:users,email,' . ($gerai->user->id ?? 'NULL'),
         ]);
 
-        Gerai::findOrFail($id)->update($request->only('nama_gerai', 'alamat', 'kota', 'telepon'));
+        // 🔥 UPDATE GERAI
+        $gerai->update([
+            'nama_gerai' => $request->nama_gerai,
+            'alamat'     => $request->alamat,
+            'kota'       => $request->kota,
+            'telepon'    => $request->telepon,
+        ]);
 
-        return redirect()->route('admin.gerai.index')->with('success', 'Gerai diupdate');
+        // 🔥 UPDATE USER
+        if ($gerai->user) {
+            $gerai->user->update([
+                'name'  => $gerai->nama_gerai,
+                'email' => $request->email,
+            ]);
+        }
+
+        return redirect()->route('admin.gerai.index')
+            ->with('success', 'Gerai berhasil diupdate');
     }
 
     public function destroy($id)
     {
-        Gerai::findOrFail($id)->delete();
-        return back()->with('success', 'Gerai dihapus');
+        $gerai = Gerai::findOrFail($id);
+
+        // 🔥 HAPUS USER TERKAIT
+        if ($gerai->user) {
+            $gerai->user->delete();
+        }
+
+        // 🔥 HAPUS GERAI
+        $gerai->delete();
+
+        return back()->with('success', 'Gerai berhasil dihapus');
     }
 }

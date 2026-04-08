@@ -9,20 +9,41 @@ use Illuminate\Http\Request;
 
 class TransaksiController extends Controller
 {
+    // 📋 LIST
     public function index()
     {
-        $transaksis = Transaksi::with(['barang','gerai'])->latest()->get();
+        if (auth()->user()->role == 'gerai') {
+            $transaksis = Transaksi::with(['barang', 'gerai'])
+                ->where('gerai_id', auth()->user()->gerai_id)
+                ->latest()
+                ->get();
+        } else {
+            $transaksis = Transaksi::with(['barang', 'gerai'])
+                ->latest()
+                ->get();
+        }
+
         return view('transaksi.index', compact('transaksis'));
     }
 
+    // ➕ CREATE
     public function create()
     {
+        if (auth()->user()->role != 'gerai') {
+            abort(403);
+        }
+
         $barangs = Barang::all();
         return view('transaksi.create', compact('barangs'));
     }
 
+    // 💾 STORE REQUEST GERAI
     public function store(Request $request)
     {
+        if (auth()->user()->role != 'gerai') {
+            abort(403);
+        }
+
         $request->validate([
             'barang_id' => 'required|exists:barangs,id',
             'jumlah' => 'required|integer|min:1'
@@ -32,56 +53,82 @@ class TransaksiController extends Controller
             'barang_id' => $request->barang_id,
             'gerai_id' => auth()->user()->gerai_id,
             'jumlah' => $request->jumlah,
-            'status' => 'pending',
-            'dikirim' => false,
+            'status' => 'pending'
         ]);
 
         return redirect()->route('gerai.transaksi.index')
-                         ->with('success','Transaksi berhasil dibuat, menunggu approval admin');
+            ->with('success', 'Request berhasil dikirim');
     }
 
+    // ✅ APPROVE ADMIN (AUTO DISTRIBUSI)
     public function approve($id)
     {
-        $transaksi = Transaksi::findOrFail($id);
-        $barang = $transaksi->barang;
-
-        if ($barang->stok < $transaksi->jumlah) {
-            return back()->with('error','Stok tidak mencukupi!');
+        if (auth()->user()->role != 'admin') {
+            abort(403);
         }
 
-        // Kurangi stok
-        $barang->stok -= $transaksi->jumlah;
-        $barang->save();
+        $transaksi = Transaksi::findOrFail($id);
 
-        // Update status transaksi tetap valid
-        $transaksi->status = 'approved';
-        $transaksi->dikirim = true; // tandai sudah dikirim
-        $transaksi->save();
+        // kalau sudah diproses
+        if ($transaksi->status != 'pending') {
+            return redirect()->route('admin.transaksi.index')
+                ->with('error', 'Transaksi sudah diproses');
+        }
 
-        // Distribusi otomatis
+        $barang = Barang::findOrFail($transaksi->barang_id);
+
+        // stok tidak cukup
+        if ($barang->stok < $transaksi->jumlah) {
+            $transaksi->update(['status' => 'ditolak']);
+
+            return redirect()->route('admin.transaksi.index')
+                ->with('error', 'Stok tidak cukup, transaksi ditolak');
+        }
+
+        // kurangi stok
+        $barang->decrement('stok', $transaksi->jumlah);
+
+        // update status
+        $transaksi->update(['status' => 'approved']);
+
+        // buat distribusi
         Distribusi::create([
-            'barang_id' => $transaksi->barang_id,
-            'gerai_id'  => $transaksi->gerai_id,
             'transaksi_id' => $transaksi->id,
-            'jumlah'    => $transaksi->jumlah,
+            'barang_id' => $transaksi->barang_id,
+            'gerai_id' => $transaksi->gerai_id,
+            'jumlah' => $transaksi->jumlah,
             'tanggal_kirim' => now(),
         ]);
 
-        return back()->with('success','Transaksi diapprove, stok berkurang & distribusi tercatat otomatis');
+        return redirect()->route('admin.transaksi.index')
+            ->with('success', 'Transaksi disetujui & dikirim');
     }
-
+    // ❌ REJECT ADMIN
     public function reject($id)
     {
+        if (auth()->user()->role != 'admin') {
+            abort(403);
+        }
+
         $transaksi = Transaksi::findOrFail($id);
-        $transaksi->status = 'ditolak';        
-        $transaksi->save();
 
-        return back()->with('error','Transaksi ditolak');
+        $transaksi->update([
+            'status' => 'ditolak'
+        ]);
+
+        return redirect()->route('admin.transaksi.index')
+            ->with('error', 'Transaksi ditolak');
     }
-
+    // 👁 DETAIL
     public function show($id)
     {
-        $transaksi = Transaksi::with(['barang','gerai'])->findOrFail($id);
+        $transaksi = Transaksi::with(['barang', 'gerai'])->findOrFail($id);
+
+        if (auth()->user()->role == 'gerai' &&
+            $transaksi->gerai_id != auth()->user()->gerai_id) {
+            abort(403);
+        }
+
         return view('transaksi.show', compact('transaksi'));
     }
 }

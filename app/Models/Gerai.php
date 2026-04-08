@@ -13,13 +13,8 @@ class Gerai extends Model
         'telepon'
     ];
 
-    public function transaksis()
+    public function user()
     {
-        return $this->hasMany(Transaksi::class);
-    }
-
-    public function distribusis()
-    {
-        return $this->hasMany(Distribusi::class);
+        return $this->hasOne(User::class);
     }
 }

@@ -13,20 +13,33 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+
+            // BASIC
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+
+            // 🔥 TAMBAHAN SYSTEM LO
+            $table->enum('role', ['admin','gudang','gerai'])->default('gerai');
+            $table->foreignId('gerai_id')->nullable()->constrained()->onDelete('cascade');
+
+            // 🔥 LOGIN PERTAMA SYSTEM
+            $table->string('password_default')->nullable();
+            $table->boolean('is_first_login')->default(true);
+
             $table->rememberToken();
             $table->timestamps();
         });
 
+        // RESET PASSWORD
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
+        // SESSION
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignId('user_id')->nullable()->index();

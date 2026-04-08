@@ -34,10 +34,10 @@
                         {{ $d->barang->nama_barang ?? '-' }}
                     </td>
 
-                    <td style="color:#6b7280">
-                        {{ $d->gerai->nama_gerai ?? '-' }}
-                    </td>
-
+                <td style="color:#6b7280">
+                    {{ $d->gerai->name ?? $d->gerai->nama_gerai ?? '-' }}
+                </td>
+                
                     <td>{{ $d->jumlah }}</td>
 
                     <td style="color:#6b7280">

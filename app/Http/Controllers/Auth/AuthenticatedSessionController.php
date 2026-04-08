@@ -11,45 +11,61 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    // Tampilkan halaman login
+    // =========================
+    // TAMPILKAN LOGIN
+    // =========================
     public function create(): View|RedirectResponse
     {
-        // Jika user sudah login, redirect sesuai role
         if (Auth::check()) {
-            $user = Auth::user();
-            $role = trim(strtolower($user->role));
-
-            if ($role === 'admin') return redirect()->route('admin.barang.index');
-            if ($role === 'gudang') return redirect()->route('gudang.barang.index');
-            if ($role === 'gerai') return redirect()->route('gerai.transaksi.index');
+            return $this->redirectByRole(Auth::user());
         }
 
         return view('auth.login');
     }
 
-    // Login
+    // =========================
+    // LOGIN
+    // =========================
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
         $request->session()->regenerate();
 
         $user = Auth::user();
-        $role = trim(strtolower($user->role));
 
-        if ($role === 'admin') return redirect()->route('admin.barang.index');
-        if ($role === 'gudang') return redirect()->route('gudang.barang.index');
-        if ($role === 'gerai') return redirect()->route('gerai.transaksi.index');
+        // 🔥 HANYA GERAI YANG WAJIB GANTI PASSWORD
+        if ($user->role === 'gerai' && $user->is_first_login) {
+            return redirect()->route('password.reset');
+        }
 
-        abort(403);
+        return $this->redirectByRole($user);
     }
 
-    // Logout
+    // =========================
+    // LOGOUT
+    // =========================
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    // =========================
+    // REDIRECT ROLE
+    // =========================
+    private function redirectByRole($user): RedirectResponse
+    {
+        $role = strtolower(trim($user->role));
+
+        return match ($role) {
+            'admin' => redirect()->route('admin.barang.index'),
+            'gudang' => redirect()->route('gudang.barang.index'),
+            'gerai' => redirect()->route('gerai.transaksi.index'),
+            default => abort(403),
+        };
     }
 }
